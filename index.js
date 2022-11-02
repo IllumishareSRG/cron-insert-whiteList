@@ -59,8 +59,9 @@ exports.insertNewWhiteList = async (req, res) => {
 
         // console.log(trueList);
 
-
-        const tx = await GoldListContract.addBatchGoldList(addressesToInsert, trueList);
+        if (addressesToInsert.length != 0) {
+            const tx = await GoldListContract.addBatchGoldList(addressesToInsert, trueList);
+        }
 
 
 
