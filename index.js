@@ -35,9 +35,9 @@ exports.insertNewWhiteList = async (req, res) => {
 
         //
 
-        const actualWhiteList = await GoldListContract.getGoldMembers();
+        let actualWhiteList = await GoldListContract.getGoldMembers();
 
-        actualWhiteList.map((address) => address.toLowerCase());
+        actualWhiteList = actualWhiteList.map((address) => address.toLowerCase());
 
 
 
@@ -53,7 +53,7 @@ exports.insertNewWhiteList = async (req, res) => {
 
         }))
 
-        console.log(addressesToInsert);
+        console.log("Addresses to Insert", addressesToInsert);
 
         const trueList = addressesToInsert.map(address => true);
 
