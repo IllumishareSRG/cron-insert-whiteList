@@ -1,0 +1,33 @@
+[
+    {
+        "inputs": [],
+        "name": "getGoldMembers",
+        "outputs": [
+            {
+                "internalType": "address[]",
+                "name": "",
+                "type": "address[]"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address[]",
+                "name": "goldAddresses",
+                "type": "address[]"
+            },
+            {
+                "internalType": "bool[]",
+                "name": "status",
+                "type": "bool[]"
+            }
+        ],
+        "name": "addBatchGoldList",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
+]
