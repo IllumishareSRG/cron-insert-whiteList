@@ -1,80 +1,114 @@
+import { ethers } from "ethers";
+import { Orbis } from "@orbisclub/orbis-sdk";
+import fetch from 'node-fetch';
+import "dotenv/config";
+import cron from 'node-cron';
 
-require('dotenv').config();
-
-const { ethers } = require("ethers");
-
-const goldListABI = require("./goldListInterface.json")
 
 
-const provider = new ethers.providers.JsonRpcProvider(`https://polygon-mumbai.g.alchemy.com/v2/${process.env['ALCHEMY_API_KEY']}`);
+
+
+//import * as goldListABI from "./goldListInterface.json";
+
+const goldListABI = [
+    {
+        "inputs": [],
+        "name": "getGoldMembers",
+        "outputs": [
+            {
+                "internalType": "address[]",
+                "name": "",
+                "type": "address[]"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address[]",
+                "name": "goldAddresses",
+                "type": "address[]"
+            },
+            {
+                "internalType": "bool[]",
+                "name": "status",
+                "type": "bool[]"
+            }
+        ],
+        "name": "addBatchGoldList",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
+]
+
+const provider = new ethers.providers.JsonRpcProvider(
+  process.env['ALCHEMY_API_KEY'] ?
+  `https://polygon-mumbai.g.alchemy.com/v2/${process.env['ALCHEMY_API_KEY']}` :
+  "https://rpc-mumbai.maticvigil.com"
+);
+
 
 const signer = new ethers.Wallet(process.env['PK']);
 
 
 const connectedSigner = signer.connect(provider);
 
-const fetch = require('node-fetch');
-
+const orbis = new Orbis();
 
 const GoldListContract = new ethers.Contract(process.env['CONTRACT_ADDRESS'], goldListABI, connectedSigner);
 
+const main = async () => {
+  try {
 
-exports.insertNewWhiteList = async (req, res) => {
-
-    try {
-
-        // Api test
-
-        const response = await fetch("https://mapofcrypto-cdppi36oeq-uc.a.run.app/merchantByProduct");
-
-        const { merchantByProduct } = await response.json();
-
-        let newAddresses = merchantByProduct.map((rc) => rc.address.toLowerCase())
-
-        newAddresses = [...new Set(newAddresses)]
-
-        //
-
-        let actualWhiteList = await GoldListContract.getGoldMembers();
-
-        actualWhiteList = actualWhiteList.map((address) => address.toLowerCase());
+      // Api test
 
 
+      console.log(`Geting data from ${process.env.DID}`);
+      const profile = await orbis.getProfile(process.env.DID);
+      let data = profile.data.details.profile.data;
+      console.log(data)
+      let newAddresses = Object.keys(data);
 
-        // check uniques and make it a Set
-        const actualWhiteLisUnique = new Set([...new Set(actualWhiteList)]);
+      newAddresses = [...new Set(newAddresses)]
+
+      //
+
+      let actualWhiteList = await GoldListContract.getGoldMembers();
+
+      actualWhiteList = actualWhiteList.map((address) => address.toLowerCase());
+
+      // check uniques and make it a Set
+      const actualWhiteLisUnique = new Set([...new Set(actualWhiteList)]);
 
 
 
-        console.log(actualWhiteLisUnique);
+      console.log(actualWhiteLisUnique);
 
-        const addressesToInsert = newAddresses.filter((address => {
-            return !actualWhiteLisUnique.has(address);
+      const addressesToInsert = newAddresses.filter((address => {
+          return !actualWhiteLisUnique.has(address);
 
-        }))
+      }))
 
-        console.log("Addresses to Insert", addressesToInsert);
+      console.log("Addresses to Insert", addressesToInsert);
 
-        const trueList = addressesToInsert.map(address => true);
+      const trueList = addressesToInsert.map(address => true);
 
-        // console.log(trueList);
+      // console.log(trueList);
 
-        if (addressesToInsert.length != 0) {
-            const tx = await GoldListContract.addBatchGoldList(addressesToInsert, trueList);
-        }
+      if (addressesToInsert.length != 0) {
+          const tx = await GoldListContract.addBatchGoldList(addressesToInsert, trueList);
+      }
+      console.log("Sucessfull")
 
+  } catch (error) {
+    console.log(error.message)
+  }
+}
 
-
-        res.status(200).send("Sucessfull");
-
-    } catch (error) {
-
-        res.status(500).send(error.message);
-
-
-    }
-
-
-
-
-};
+cron.schedule('* * * * * * *', () => {
+  console.log('running a task every minute');
+  main();
+});
