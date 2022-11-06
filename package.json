@@ -1,7 +1,7 @@
 {
   "type": "module",
   "dependencies": {
-    "@orbisclub/orbis-sdk": "^0.4.4-beta.26",
+    "@orbisclub/orbis-sdk": "^0.2.0",
     "dotenv": "^16.0.3",
     "ethers": "^5.7.2",
     "node-cron": "^3.0.2",

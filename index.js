@@ -1,53 +1,17 @@
 import { ethers } from "ethers";
 import { Orbis } from "@orbisclub/orbis-sdk";
-import fetch from 'node-fetch';
 import "dotenv/config";
-import cron from 'node-cron';
+
+import { createRequire } from "module"; // Bring in the ability to create the 'require' method
+const require = createRequire(import.meta.url); // construct the require method
+const goldListABI = require("./goldListInterface.json") // use the require method
 
 
 
-
-
-//import * as goldListABI from "./goldListInterface.json";
-
-const goldListABI = [
-    {
-        "inputs": [],
-        "name": "getGoldMembers",
-        "outputs": [
-            {
-                "internalType": "address[]",
-                "name": "",
-                "type": "address[]"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address[]",
-                "name": "goldAddresses",
-                "type": "address[]"
-            },
-            {
-                "internalType": "bool[]",
-                "name": "status",
-                "type": "bool[]"
-            }
-        ],
-        "name": "addBatchGoldList",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    }
-]
 
 const provider = new ethers.providers.JsonRpcProvider(
-  process.env['ALCHEMY_API_KEY'] ?
-  `https://polygon-mumbai.g.alchemy.com/v2/${process.env['ALCHEMY_API_KEY']}` :
-  "https://rpc-mumbai.maticvigil.com"
+
+  `https://polygon-mumbai.g.alchemy.com/v2/${process.env['ALCHEMY_API_KEY']}` 
 );
 
 
@@ -60,7 +24,7 @@ const orbis = new Orbis();
 
 const GoldListContract = new ethers.Contract(process.env['CONTRACT_ADDRESS'], goldListABI, connectedSigner);
 
-const main = async () => {
+exports.insertNewWhiteList = async (req, res) => {
   try {
 
       // Api test
@@ -101,14 +65,10 @@ const main = async () => {
       if (addressesToInsert.length != 0) {
           const tx = await GoldListContract.addBatchGoldList(addressesToInsert, trueList);
       }
-      console.log("Sucessfull")
+      res.status(200).send("Sucessfull");
 
   } catch (error) {
-    console.log(error.message)
-  }
+    res.status(500).send(error.message);
+}
 }
 
-cron.schedule('* * * * * * *', () => {
-  console.log('running a task every minute');
-  main();
-});
