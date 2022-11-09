@@ -2,7 +2,6 @@ import { ethers } from "ethers";
 import { Orbis } from "@orbisclub/orbis-sdk";
 import fetch from 'node-fetch';
 import crypto from 'crypto'
-
 import "dotenv/config";
 
 import { createRequire } from "module"; // Bring in the ability to create the 'require' method
@@ -14,12 +13,13 @@ const goldListABI = require("./goldListInterface.json") // use the require metho
 
 const provider = new ethers.providers.JsonRpcProvider(
 
-  `https://polygon-mumbai.g.alchemy.com/v2/${process.env['ALCHEMY_API_KEY']}`
+  process.env.ALCHEMY_API_KEY ?
+  `https://polygon-mumbai.g.alchemy.com/v2/${process.env['ALCHEMY_API_KEY']}` :
+  `https://rpc-mumbai.maticvigil.com`
 );
 
 
 const signer = new ethers.Wallet(process.env['PK']);
-
 
 const connectedSigner = signer.connect(provider);
 
@@ -39,16 +39,17 @@ export async function insertWhiteList(req, res) {
     const profile = await orbis.getProfile(process.env.DID);
     let data = profile.data.details.profile.data;
     console.log(data)
-
+    if(!data){
+      return
+    }
     let newAddresses = Object.keys(data);
 
     newAddresses = newAddresses.map((address) => address.toLowerCase())
 
 
     newAddresses = [...new Set(newAddresses)]
-
+    console.log(newAddresses)
     //
-
     let actualWhiteList = await GoldListContract.getGoldMembers();
 
     actualWhiteList = actualWhiteList.map((address) => address.toLowerCase());
@@ -60,15 +61,17 @@ export async function insertWhiteList(req, res) {
 
     console.log(actualWhiteLisUnique);
 
-    const addressesToInsert = newAddresses.filter(async address => {
-      const payloadAsString = data[addressesToInsert];
+    const addressesToInsert = []
+
+    for(const address of newAddresses){
+      console.log(address)
+      const payloadAsString = data[address];
 
       const signature = crypto
         .createHmac('sha256', apiPrivateKey)
         .update(Buffer.from(payloadAsString, 'utf8'))
         .digest('hex')
         .toLowerCase();
-
       var requestOptions = {
           method: 'GET',
           headers: {
@@ -80,24 +83,25 @@ export async function insertWhiteList(req, res) {
 
       const result = await fetch(`https://stationapi.veriff.com/v1/sessions/${payloadAsString}/decision`, requestOptions)
       const obj = JSON.parse(await result.text());
-      if(obj.status === "approved"){
-        return !actualWhiteLisUnique.has(address);
+      if(obj.verification?.status === "approved" && !actualWhiteList.includes(address)){
+        addressesToInsert.push(address);
       }
-    })
+    }
 
 
     console.log("Addresses to Insert", addressesToInsert);
 
     const trueList = addressesToInsert.map(address => true);
 
-    // console.log(trueList);
 
     if (addressesToInsert.length != 0) {
       const tx = await GoldListContract.addBatchGoldList(addressesToInsert, trueList);
     }
+
     res.status(200).send("Sucessfull");
 
   } catch (error) {
+    console.log(error)
     res.status(500).send(error.message);
   }
 }
