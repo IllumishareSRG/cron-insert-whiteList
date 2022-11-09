@@ -60,7 +60,7 @@ export async function insertWhiteList(req, res) {
 
     console.log(actualWhiteLisUnique);
 
-    const addressesToInsert = newAddresses.filter(async (address => {
+    const addressesToInsert = newAddresses.filter(async address => {
       const payloadAsString = data[addressesToInsert];
 
       const signature = crypto
@@ -83,11 +83,11 @@ export async function insertWhiteList(req, res) {
       if(obj.status === "approved"){
         return !actualWhiteLisUnique.has(address);
       }
-    }))
+    })
 
 
     console.log("Addresses to Insert", addressesToInsert);
-    
+
     const trueList = addressesToInsert.map(address => true);
 
     // console.log(trueList);
