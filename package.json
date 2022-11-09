@@ -2,9 +2,10 @@
   "type": "module",
   "dependencies": {
     "@orbisclub/orbis-sdk": "^0.2.0",
+    "crypto": "^1.0.1",
     "dotenv": "^16.0.3",
     "ethers": "^5.7.2",
     "node-cron": "^3.0.2",
-    "node-fetch": "^2.0.0"
+    "node-fetch": "^3.2.10"
   }
 }

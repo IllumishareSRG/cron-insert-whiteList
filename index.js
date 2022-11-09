@@ -1,5 +1,8 @@
 import { ethers } from "ethers";
 import { Orbis } from "@orbisclub/orbis-sdk";
+import fetch from 'node-fetch';
+import crypto from 'crypto'
+
 import "dotenv/config";
 
 import { createRequire } from "module"; // Bring in the ability to create the 'require' method
@@ -24,6 +27,8 @@ const orbis = new Orbis();
 
 const GoldListContract = new ethers.Contract(process.env['CONTRACT_ADDRESS'], goldListABI, connectedSigner);
 
+const apiPrivateKey = process.env.VERIFF_PRIV_KEY;
+
 export async function insertWhiteList(req, res) {
   try {
 
@@ -34,6 +39,7 @@ export async function insertWhiteList(req, res) {
     const profile = await orbis.getProfile(process.env.DID);
     let data = profile.data.details.profile.data;
     console.log(data)
+
     let newAddresses = Object.keys(data);
 
     newAddresses = newAddresses.map((address) => address.toLowerCase())
@@ -54,13 +60,34 @@ export async function insertWhiteList(req, res) {
 
     console.log(actualWhiteLisUnique);
 
-    const addressesToInsert = newAddresses.filter((address => {
-      return !actualWhiteLisUnique.has(address);
+    const addressesToInsert = newAddresses.filter(async (address => {
+      const payloadAsString = data[addressesToInsert];
 
+      const signature = crypto
+        .createHmac('sha256', apiPrivateKey)
+        .update(Buffer.from(payloadAsString, 'utf8'))
+        .digest('hex')
+        .toLowerCase();
+
+      var requestOptions = {
+          method: 'GET',
+          headers: {
+              'Content-Type': 'application/json',
+              'X-HMAC-SIGNATURE': signature,
+              "X-AUTH-CLIENT":  process.env.VERIFF_PUB_KEY
+          }
+      };
+
+      const result = await fetch(`https://stationapi.veriff.com/v1/sessions/${payloadAsString}/decision`, requestOptions)
+      const obj = JSON.parse(await result.text());
+      if(obj.status === "approved"){
+        return !actualWhiteLisUnique.has(address);
+      }
     }))
 
-    console.log("Addresses to Insert", addressesToInsert);
 
+    console.log("Addresses to Insert", addressesToInsert);
+    
     const trueList = addressesToInsert.map(address => true);
 
     // console.log(trueList);
@@ -74,4 +101,3 @@ export async function insertWhiteList(req, res) {
     res.status(500).send(error.message);
   }
 }
-
