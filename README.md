@@ -4,7 +4,7 @@ This Cron is uploaded to a Google Cloud function
 
 The URL of the google function ` hhttps://us-central1-project-chainlink.cloudfunctions.net/insert-whitelist `
 
-Triggering this HTTPS inserts all the new addresses that have been inserted to the WordPress/Veriff DB
+Triggering this HTTPS inserts all the new addresses that have been inserted into the Orbis and checks that all have been approved by veriff
 
 There is no special security to trigger this.
 
