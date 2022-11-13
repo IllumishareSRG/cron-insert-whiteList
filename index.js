@@ -4,31 +4,33 @@ import fetch from 'node-fetch';
 import crypto from 'crypto'
 import "dotenv/config";
 
-import { createRequire } from "module"; // Bring in the ability to create the 'require' method
-const require = createRequire(import.meta.url); // construct the require method
-const goldListABI = require("./goldListInterface.json") // use the require method
+import { createRequire } from "module"; 
+const require = createRequire(import.meta.url); 
+const goldListABI = require("./goldListInterface.json") 
 
-
-
-
-const provider = new ethers.providers.JsonRpcProvider(
-
-  process.env.ALCHEMY_API_KEY ?
-  `https://polygon-mumbai.g.alchemy.com/v2/${process.env['ALCHEMY_API_KEY']}` :
-  `https://rpc-mumbai.maticvigil.com`
-);
-
-
-const signer = new ethers.Wallet(process.env['PK']);
-
-const connectedSigner = signer.connect(provider);
-
+const signer = new ethers.Wallet(process.env.PK);
+const apiPrivateKey = process.env.VERIFF_PRIV_KEY;
 const orbis = new Orbis();
 
-const GoldListContract = new ethers.Contract(process.env['CONTRACT_ADDRESS'], goldListABI, connectedSigner);
 
-const apiPrivateKey = process.env.VERIFF_PRIV_KEY;
+const providerPolygon = new ethers.providers.JsonRpcProvider(`https://polygon-mainnet.g.alchemy.com/${process.env.ALCHEMY_POLYGON_KEY}`);
+const providerETH = new ethers.providers.JsonRpcProvider(`https://eth-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_ETH_KEY}`)
+const providerBSC = new ethers.providers.JsonRpcProvider('https://bsc-dataseed3.defibit.io');
 
+
+
+const connectedSignerPolygon = signer.connect(providerPolygon);
+const connectedSignerETH = signer.connect(providerETH);
+const connectedSignerBSC = signer.connect(providerBSC);
+
+
+const GoldListContractPolygon = new ethers.Contract(process.env.CONTRACT_ADDRESS_POLYGON, goldListABI, connectedSignerPolygon);
+const GoldListContractETH = new ethers.Contract(process.env.CONTRACT_ADDRESS_ETH, goldListABI, connectedSignerETH);
+const GoldListContractBSC = new ethers.Contract(process.env.CONTRACT_ADDRESS_BSC, goldListABI, connectedSignerBSC);
+
+
+
+// export async function main() {
 export async function insertWhiteList(req, res) {
   try {
 
@@ -50,7 +52,7 @@ export async function insertWhiteList(req, res) {
     newAddresses = [...new Set(newAddresses)]
     console.log(newAddresses)
     //
-    let actualWhiteList = await GoldListContract.getGoldMembers();
+    let actualWhiteList = await GoldListContractPolygon.getGoldMembers();
 
     actualWhiteList = actualWhiteList.map((address) => address.toLowerCase());
 
@@ -95,7 +97,11 @@ export async function insertWhiteList(req, res) {
 
 
     if (addressesToInsert.length != 0) {
-      const tx = await GoldListContract.addBatchGoldList(addressesToInsert, trueList);
+
+       await GoldListContractPolygon.addBatchGoldList(addressesToInsert, trueList);
+       await GoldListContractBSC.addBatchGoldList(addressesToInsert, trueList);
+       await GoldListContractETH.addBatchGoldList(addressesToInsert, trueList);
+
     }
 
     res.status(200).send("Sucessfull");
@@ -105,3 +111,5 @@ export async function insertWhiteList(req, res) {
     res.status(500).send(error.message);
   }
 }
+
+// main();
