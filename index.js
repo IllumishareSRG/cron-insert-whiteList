@@ -38,7 +38,6 @@ export async function insertWhiteList(req, res) {
     console.log(`Geting data from ${process.env.DID}`);
     const profile = await orbis.getProfile(process.env.DID);
     let data = profile.data.details.profile.data;
-    console.log(data)
     if(!data){
       return
     }
@@ -48,7 +47,6 @@ export async function insertWhiteList(req, res) {
 
 
     newAddresses = [...new Set(newAddresses)]
-    console.log(newAddresses)
     //
     let actualWhiteList = await GoldListContract.getGoldMembers();
 
@@ -87,6 +85,25 @@ export async function insertWhiteList(req, res) {
         addressesToInsert.push(address);
       }
     }
+
+    console.log("KYC Addresses to insert", addressesToInsert);
+
+
+    // Getting addresses that did not require KYC because they are on the GOLD list event 
+
+
+
+    console.log(`Geting data from ${process.env.DID_QR}`);
+    const profileQR = await orbis.getProfile(process.env.DID_QR);
+    let dataQR = profileQR.data.details.profile.data;
+    console.log("KYC Addresses to insert", dataQR);
+
+    if(!dataQR){
+      return
+    }
+
+    addressesToInsert.push(...Object.keys(dataQR));
+
 
 
     console.log("Addresses to Insert", addressesToInsert);
