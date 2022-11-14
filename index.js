@@ -14,8 +14,8 @@ const goldListABI = require("./goldListInterface.json") // use the require metho
 const provider = new ethers.providers.JsonRpcProvider(
 
   process.env.ALCHEMY_API_KEY ?
-  `https://polygon-mumbai.g.alchemy.com/v2/${process.env['ALCHEMY_API_KEY']}` :
-  `https://rpc-mumbai.maticvigil.com`
+    `https://polygon-mumbai.g.alchemy.com/v2/${process.env['ALCHEMY_API_KEY']}` :
+    `https://rpc-mumbai.maticvigil.com`
 );
 
 
@@ -29,16 +29,17 @@ const GoldListContract = new ethers.Contract(process.env['CONTRACT_ADDRESS'], go
 
 const apiPrivateKey = process.env.VERIFF_PRIV_KEY;
 
+// export async function main() {
 export async function insertWhiteList(req, res) {
   try {
 
     // Api test
 
 
-    console.log(`Geting data from ${process.env.DID}`);
+    console.log(`Geting data from DID KYC ${process.env.DID}`);
     const profile = await orbis.getProfile(process.env.DID);
     let data = profile.data.details.profile.data;
-    if(!data){
+    if (!data) {
       return
     }
     let newAddresses = Object.keys(data);
@@ -61,7 +62,7 @@ export async function insertWhiteList(req, res) {
 
     const addressesToInsert = []
 
-    for(const address of newAddresses){
+    for (const address of newAddresses) {
       console.log(address)
       const payloadAsString = data[address];
 
@@ -71,17 +72,17 @@ export async function insertWhiteList(req, res) {
         .digest('hex')
         .toLowerCase();
       var requestOptions = {
-          method: 'GET',
-          headers: {
-              'Content-Type': 'application/json',
-              'X-HMAC-SIGNATURE': signature,
-              "X-AUTH-CLIENT":  process.env.VERIFF_PUB_KEY
-          }
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-HMAC-SIGNATURE': signature,
+          "X-AUTH-CLIENT": process.env.VERIFF_PUB_KEY
+        }
       };
 
       const result = await fetch(`https://stationapi.veriff.com/v1/sessions/${payloadAsString}/decision`, requestOptions)
       const obj = JSON.parse(await result.text());
-      if(obj.verification?.status === "approved" && !actualWhiteList.includes(address)){
+      if (obj.verification?.status === "approved" && !actualWhiteList.includes(address)) {
         addressesToInsert.push(address);
       }
     }
@@ -93,12 +94,12 @@ export async function insertWhiteList(req, res) {
 
 
 
-    console.log(`Geting data from ${process.env.DID_QR}`);
+    console.log(`Geting data from DID QR ${process.env.DID_QR}`);
     const profileQR = await orbis.getProfile(process.env.DID_QR);
     let dataQR = profileQR.data.details.profile.data;
     console.log("KYC Addresses to insert", dataQR);
 
-    if(!dataQR){
+    if (!dataQR) {
       return
     }
 
@@ -122,3 +123,5 @@ export async function insertWhiteList(req, res) {
     res.status(500).send(error.message);
   }
 }
+
+// main()
