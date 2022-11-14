@@ -120,6 +120,7 @@ export async function insertWhiteList(req, res) {
     }
 
     newAddresses = Object.keys(dataQR);
+    newAddresses = newAddresses.map((address) => address.toLowerCase())
     //Filter out addresse that are already whitelisted
     const newAddressesPolygon = newAddresses.filter((address => {
       return !actualWhiteLisUniquePolygon.has(address);
