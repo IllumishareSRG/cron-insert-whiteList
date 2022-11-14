@@ -110,6 +110,11 @@ export async function insertWhiteList(req, res) {
       }
     }
 
+    console.log("KYC Addresses to insert Polygon", addressesToInsertPolygon);
+    console.log("KYC Addresses to insert ETH", addressesToInsertETH);
+    console.log("KYC Addresses to insert BSC", addressesToInsertBSC);
+
+
     console.log(`Geting data from QR DID ${process.env.DID_QR}`);
     const profileQR = await orbis.getProfile(process.env.DID_QR);
     let dataQR = profileQR.data.details.profile.data;
