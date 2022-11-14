@@ -29,7 +29,7 @@ const GoldListContract = new ethers.Contract(process.env['CONTRACT_ADDRESS'], go
 
 const apiPrivateKey = process.env.VERIFF_PRIV_KEY;
 
-// export async function main() {
+//export async function main() {
 export async function insertWhiteList(req, res) {
   try {
 
@@ -88,7 +88,7 @@ export async function insertWhiteList(req, res) {
     console.log("KYC Addresses to insert", addressesToInsert);
 
 
-    // Getting addresses that did not require KYC because they are on the GOLD list event 
+    // Getting addresses that did not require KYC because they are on the GOLD list event
 
 
 
@@ -129,4 +129,4 @@ export async function insertWhiteList(req, res) {
   }
 }
 
-// main()
+//main()
