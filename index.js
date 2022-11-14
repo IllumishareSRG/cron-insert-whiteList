@@ -4,9 +4,9 @@ import fetch from 'node-fetch';
 import crypto from 'crypto'
 import "dotenv/config";
 
-import { createRequire } from "module"; 
-const require = createRequire(import.meta.url); 
-const goldListABI = require("./goldListInterface.json") 
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const goldListABI = require("./goldListInterface.json")
 
 const signer = new ethers.Wallet(process.env.PK);
 const apiPrivateKey = process.env.VERIFF_PRIV_KEY;
@@ -40,8 +40,8 @@ export async function insertWhiteList(req, res) {
     console.log(`Geting data from ${process.env.DID}`);
     const profile = await orbis.getProfile(process.env.DID);
     let data = profile.data.details.profile.data;
-    console.log(data)
-    if(!data){
+    console.log("Addresses read from KYC DID", data)
+    if (!data) {
       return
     }
     let newAddresses = Object.keys(data);
@@ -52,20 +52,31 @@ export async function insertWhiteList(req, res) {
     newAddresses = [...new Set(newAddresses)]
     console.log(newAddresses)
     //
-    let actualWhiteList = await GoldListContractPolygon.getGoldMembers();
+    let actualWhiteListPolygon = await GoldListContractPolygon.getGoldMembers();
+    let actualWhiteListETH = await GoldListContractETH.getGoldMembers();
+    let actualWhiteListBSC = await GoldListContractBSC.getGoldMembers();
 
-    actualWhiteList = actualWhiteList.map((address) => address.toLowerCase());
+
+    actualWhiteListPolygon = actualWhiteListPolygon.map((address) => address.toLowerCase());
+    actualWhiteListETH = actualWhiteListETH.map((address) => address.toLowerCase());
+    actualWhiteListBSC = actualWhiteListBSC.map((address) => address.toLowerCase());
 
     // check uniques and make it a Set
-    const actualWhiteLisUnique = new Set([...new Set(actualWhiteList)]);
+    const actualWhiteLisUniquePolygon = new Set([...new Set(actualWhiteListPolygon)]);
+    const actualWhiteLisUniqueETH = new Set([...new Set(actualWhiteListETH)]);
+    const actualWhiteLisUniqueBSC = new Set([...new Set(actualWhiteListBSC)]);
 
 
 
-    console.log(actualWhiteLisUnique);
+    console.log("Actual list in polygon", actualWhiteLisUniquePolygon);
+    console.log("Actual list in ETH", actualWhiteLisUniqueETH);
+    console.log("Actual list in BSC", actualWhiteLisUniqueBSC);
 
-    const addressesToInsert = []
+    const addressesToInsertPolygon = []
+    const addressesToInsertETH = []
+    const addressesToInsertBSC = []
 
-    for(const address of newAddresses){
+    for (const address of newAddresses) {
       console.log(address)
       const payloadAsString = data[address];
 
@@ -75,34 +86,87 @@ export async function insertWhiteList(req, res) {
         .digest('hex')
         .toLowerCase();
       var requestOptions = {
-          method: 'GET',
-          headers: {
-              'Content-Type': 'application/json',
-              'X-HMAC-SIGNATURE': signature,
-              "X-AUTH-CLIENT":  process.env.VERIFF_PUB_KEY
-          }
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-HMAC-SIGNATURE': signature,
+          "X-AUTH-CLIENT": process.env.VERIFF_PUB_KEY
+        }
       };
 
       const result = await fetch(`https://stationapi.veriff.com/v1/sessions/${payloadAsString}/decision`, requestOptions)
       const obj = JSON.parse(await result.text());
-      if(obj.verification?.status === "approved" && !actualWhiteList.includes(address)){
-        addressesToInsert.push(address);
+
+      if (obj.verification?.status === "approved") {
+        if (!actualWhiteListPolygon.includes(address)) {
+          addressesToInsertPolygon.push(address);
+        }
+        if (!actualWhiteListETH.includes(address)) {
+          addressesToInsertETH.push(address);
+        }
+        if (!actualWhiteListBSC.includes(address)) {
+          addressesToInsertBSC.push(address);
+        }
       }
     }
 
+    console.log(`Geting data from QR DID ${process.env.DID_QR}`);
+    const profileQR = await orbis.getProfile(process.env.DID_QR);
+    let dataQR = profileQR.data.details.profile.data;
+    console.log(" Addresses read from QR DID", dataQR);
 
-    console.log("Addresses to Insert", addressesToInsert);
-
-    const trueList = addressesToInsert.map(address => true);
-
-
-    if (addressesToInsert.length != 0) {
-
-       await GoldListContractPolygon.addBatchGoldList(addressesToInsert, trueList);
-       await GoldListContractBSC.addBatchGoldList(addressesToInsert, trueList);
-       await GoldListContractETH.addBatchGoldList(addressesToInsert, trueList);
-
+    if (!dataQR) {
+      return
     }
+
+    newAddresses = Object.keys(dataQR);
+    //Filter out addresse that are already whitelisted
+    const newAddressesPolygon = newAddresses.filter((address => {
+      return !actualWhiteLisUniquePolygon.has(address);
+
+    }))
+
+    const newAddressesETH = newAddresses.filter((address => {
+      return !actualWhiteLisUniqueETH.has(address);
+
+    }))
+
+
+    const newAddressesBSC = newAddresses.filter((address => {
+      return !actualWhiteLisUniqueBSC.has(address);
+
+    }))
+
+
+    addressesToInsertPolygon.push(...newAddressesPolygon);
+    addressesToInsertETH.push(...newAddressesETH);
+    addressesToInsertBSC.push(...newAddressesBSC);
+
+
+
+    console.log("Addresses to Insert Polygon", addressesToInsertPolygon);
+    console.log("Addresses to Insert ETH", addressesToInsertETH);
+    console.log("Addresses to Insert BSC", addressesToInsertBSC);
+
+    const trueListP = addressesToInsertPolygon.map(address => true);
+    const trueListETH = addressesToInsertETH.map(address => true);
+    const trueListBSC = addressesToInsertBSC.map(address => true);
+
+
+    if (addressesToInsertPolygon.length != 0) {
+      await GoldListContractPolygon.addBatchGoldList(addressesToInsert, trueListP);
+    }
+
+    if (addressesToInsertETH.length != 0) {
+      await GoldListContractETH.addBatchGoldList(addressesToInsert, trueListETH);
+    }
+
+
+    if (addressesToInsertBSC.length != 0) {
+      await GoldListContractBSC.addBatchGoldList(addressesToInsert, trueListBSC);
+    }
+
+
 
     res.status(200).send("Sucessfull");
 
