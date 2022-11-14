@@ -56,8 +56,6 @@ export async function insertWhiteList(req, res) {
     // check uniques and make it a Set
     const actualWhiteLisUnique = new Set([...new Set(actualWhiteList)]);
 
-
-
     console.log(actualWhiteLisUnique);
 
     const addressesToInsert = []
@@ -97,17 +95,24 @@ export async function insertWhiteList(req, res) {
     console.log(`Geting data from DID QR ${process.env.DID_QR}`);
     const profileQR = await orbis.getProfile(process.env.DID_QR);
     let dataQR = profileQR.data.details.profile.data;
-    console.log("KYC Addresses to insert", dataQR);
+    console.log("QR Addresses to insert", dataQR);
 
     if (!dataQR) {
       return
     }
 
-    addressesToInsert.push(...Object.keys(dataQR));
+    newAddresses = Object.keys(dataQR);
+    //Filter out addresse that are already whitelisted
+    newAddresses = newAddresses.filter((address => {
+      return !actualWhiteLisUnique.has(address);
+
+    }))
 
 
+    addressesToInsert.push(...newAddresses);
 
-    console.log("Addresses to Insert", addressesToInsert);
+
+    console.log("Full list Addresses to Insert", addressesToInsert);
 
     const trueList = addressesToInsert.map(address => true);
 
