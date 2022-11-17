@@ -29,8 +29,8 @@ const GoldListContract = new ethers.Contract(process.env['CONTRACT_ADDRESS'], go
 
 const apiPrivateKey = process.env.VERIFF_PRIV_KEY;
 
-//export async function main() {
-export async function insertWhiteList(req, res) {
+export async function main() {
+  // export async function insertWhiteList(req, res) {
   try {
 
     // Api test
@@ -39,10 +39,16 @@ export async function insertWhiteList(req, res) {
     console.log(`Geting data from DID KYC ${process.env.DID}`);
     const profile = await orbis.getProfile(process.env.DID);
     let data = profile.data.details.profile.data;
-    if (!data) {
-      return
+
+    console.log("Addresses read from DID KYC", data);
+
+    let newAddresses = [];
+
+
+    if (data) {
+      newAddresses = Object.keys(data);
     }
-    let newAddresses = Object.keys(data);
+
 
     newAddresses = newAddresses.map((address) => address.toLowerCase())
 
@@ -56,7 +62,7 @@ export async function insertWhiteList(req, res) {
     // check uniques and make it a Set
     const actualWhiteLisUnique = new Set([...new Set(actualWhiteList)]);
 
-    console.log(actualWhiteLisUnique);
+    console.log("Actual address list", actualWhiteLisUnique);
 
     const addressesToInsert = []
 
@@ -92,26 +98,27 @@ export async function insertWhiteList(req, res) {
 
 
 
-    console.log(`Geting data from DID QR ${process.env.DID_QR}`);
+    console.log(`Geting data from QR DID ${process.env.DID_QR}`);
     const profileQR = await orbis.getProfile(process.env.DID_QR);
     let dataQR = profileQR.data.details.profile.data;
-    console.log("QR Addresses to insert", dataQR);
+    console.log("Addresses read from QR DID", dataQR);
 
-    if (!dataQR) {
-      return
+    if (dataQR) {
+      newAddresses = Object.keys(dataQR);
+      newAddresses = newAddresses.map((address) => address.toLowerCase())
+
+      //Filter out addresse that are already whitelisted
+      newAddresses = newAddresses.filter((address => {
+        return !actualWhiteLisUnique.has(address);
+
+      }))
+
+      console.log("Addresses to insert from QR DID", newAddresses);
+
+
+
+      addressesToInsert.push(...newAddresses);
     }
-
-    newAddresses = Object.keys(dataQR);
-    newAddresses = newAddresses.map((address) => address.toLowerCase())
-
-    //Filter out addresse that are already whitelisted
-    newAddresses = newAddresses.filter((address => {
-      return !actualWhiteLisUnique.has(address);
-
-    }))
-
-
-    addressesToInsert.push(...newAddresses);
 
 
     console.log("Full list Addresses to Insert", addressesToInsert);
@@ -123,12 +130,12 @@ export async function insertWhiteList(req, res) {
       const tx = await GoldListContract.addBatchGoldList(addressesToInsert, trueList);
     }
 
-    res.status(200).send("Sucessfull");
+    // res.status(200).send("Sucessfull");
 
   } catch (error) {
     console.log(error)
-    res.status(500).send(error.message);
+    // res.status(500).send(error.message);
   }
 }
 
-//main()
+main()
