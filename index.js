@@ -67,7 +67,6 @@ export async function main() {
     const addressesToInsert = []
 
     for (const address of newAddresses) {
-      console.log(address)
       const payloadAsString = data[address];
 
       const signature = crypto
