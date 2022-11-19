@@ -11,12 +11,7 @@ const goldListABI = require("./goldListInterface.json") // use the require metho
 
 
 
-const provider = new ethers.providers.JsonRpcProvider(
-
-  process.env.ALCHEMY_API_KEY ?
-    `https://polygon-mumbai.g.alchemy.com/v2/${process.env['ALCHEMY_API_KEY']}` :
-    `https://rpc-mumbai.maticvigil.com`
-);
+const provider = new ethers.providers.JsonRpcProvider('https://bsc-dataseed3.defibit.io');
 
 
 const signer = new ethers.Wallet(process.env['PK']);
@@ -29,8 +24,8 @@ const GoldListContract = new ethers.Contract(process.env['CONTRACT_ADDRESS'], go
 
 const apiPrivateKey = process.env.VERIFF_PRIV_KEY;
 
-export async function main() {
-  // export async function insertWhiteList(req, res) {
+// export async function main() {
+export async function insertWhiteList(req, res) {
   try {
 
     // Api test
@@ -129,12 +124,12 @@ export async function main() {
       const tx = await GoldListContract.addBatchGoldList(addressesToInsert, trueList);
     }
 
-    // res.status(200).send("Sucessfull");
+    res.status(200).send("Sucessfull");
 
   } catch (error) {
     console.log(error)
-    // res.status(500).send(error.message);
+    res.status(500).send(error.message);
   }
 }
 
-main()
+// main()
